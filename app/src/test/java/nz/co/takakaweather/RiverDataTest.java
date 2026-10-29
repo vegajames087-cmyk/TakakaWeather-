@@ -49,10 +49,8 @@ public class RiverDataTest {
     }
 
     @Test public void parsesPipeDelimitedFallback() throws Exception {
-        String fallback = "<table><tr><td>Takaka at Kotinga</td><td>30/10/2026 10:00</td><td>1472</td>" +
-            "<td>-4</td><td>11.5</td><td>15.9</td><td>1572</td><td>27/10/2026 13:15</td></tr>" +
-            "<tr><td>Takaka at Harwoods</td><td>30/10/2026 10:00</td><td>1025</td>" +
-            "<td>-9</td><td>9.89</td><td>12.4</td><td>1086</td><td>29/10/2026 22:50</td></tr></table>";
+        String fallback = "Takaka at Kotinga|30/10/2026 10:00|1472|-4|11.5|15.9|1572|27/10/2026 13:15\n" +
+            "Takaka at Harwoods|30/10/2026 10:00|1025|-9|9.89|12.4|1086|29/10/2026 22:50";
         JSONObject result = RiverData.parseReportHtml(fallback);
         assertEquals(11.5, result.getJSONObject("kotinga").getDouble("flow"), 0.001);
         assertEquals(9.89, result.getJSONObject("harwoods").getDouble("flow"), 0.001);
