@@ -48,7 +48,7 @@ public class RiverWidgetProvider extends AppWidgetProvider {
         String failure = null;
         try { data = RiverData.fetchReport(); }
         catch (Exception e) { failure = e.getMessage() == null ? "FEED UNAVAILABLE" : e.getMessage(); }
-        try { weather = fetchWeather(); } catch (Exception ignored) {}
+        try { weather = WeatherData.fetchEcmwf(-40.859, 172.806); } catch (Exception ignored) {}
         for (int id : ids) {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_river);
             Intent launch = new Intent(context, MainActivity.class);
@@ -58,9 +58,9 @@ public class RiverWidgetProvider extends AppWidgetProvider {
             if (weather != null) {
                 JSONObject current = weather.optJSONObject("current");
                 if (current != null) {
-                    views.setTextViewText(R.id.widget_weather_temp, format(current.optDouble("temperature_2m", Double.NaN)) + "°C");
-                    views.setTextViewText(R.id.widget_weather_wind, "WIND " + format(current.optDouble("wind_speed_10m", Double.NaN)) + " km/h");
-                    views.setTextViewText(R.id.widget_weather_rain, "RAIN " + format(current.optDouble("precipitation", Double.NaN)) + " mm / ECMWF");
+                    views.setTextViewText(R.id.widget_weather_temp, format(current.optDouble("temperature", Double.NaN)) + "°C");
+                    views.setTextViewText(R.id.widget_weather_wind, "WIND " + format(current.optDouble("wind", Double.NaN)) + " km/h");
+                    views.setTextViewText(R.id.widget_weather_rain, "RAIN " + format(current.optDouble("rain", Double.NaN)) + " mm / ECMWF");
                 }
             }
             if (data != null) {
@@ -74,29 +74,15 @@ public class RiverWidgetProvider extends AppWidgetProvider {
                     views.setTextViewText(R.id.widget_h_flow, format(h.optDouble("flow", Double.NaN)) + " m³/s");
                     views.setTextViewText(R.id.widget_h_level, "LEVEL " + format(h.optDouble("level", Double.NaN)) + " mm");
                 }
-                String time = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
-                views.setTextViewText(R.id.widget_status, "● LIVE");
-                views.setTextViewText(R.id.widget_updated, "UPDATED " + time + " / TASMAN DC TELEMETRY");
+                String time = k != null ? k.optString("time", "SOURCE TIME UNKNOWN") : "SOURCE TIME UNKNOWN";
+                views.setTextViewText(R.id.widget_status, "● DATA");
+                views.setTextViewText(R.id.widget_updated, "COUNCIL SOURCE " + time);
             } else {
                 views.setTextViewText(R.id.widget_status, "OFFLINE");
                 views.setTextViewText(R.id.widget_updated, "NO NEW DATA / " + (failure == null ? "CHECK CONNECTION" : "CHECK APP FOR STATUS"));
             }
             manager.updateAppWidget(id, views);
         }
-    }
-
-    private static JSONObject fetchWeather() throws Exception {
-        java.net.HttpURLConnection connection = (java.net.HttpURLConnection) new java.net.URL("https://api.open-meteo.com/v1/ecmwf?latitude=-40.859&longitude=172.806&current=temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m,relative_humidity_2m&timezone=Pacific%2FAuckland").openConnection();
-        connection.setConnectTimeout(9000);
-        connection.setReadTimeout(9000);
-        connection.setRequestProperty("User-Agent", "WeatherAndRiversNZ/1.2");
-        try {
-            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(connection.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
-            StringBuilder body = new StringBuilder(); String line;
-            while ((line = reader.readLine()) != null) body.append(line);
-            reader.close();
-            return new JSONObject(body.toString());
-        } finally { connection.disconnect(); }
     }
 
     private static String format(double n) {
