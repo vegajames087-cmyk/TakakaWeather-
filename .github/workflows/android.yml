@@ -1,4 +1,7 @@
 name: Android build
+concurrency:
+  group: android-build-${{ github.ref }}
+  cancel-in-progress: true
 on:
   push:
     branches: [main, fix/android-project-foundation]
