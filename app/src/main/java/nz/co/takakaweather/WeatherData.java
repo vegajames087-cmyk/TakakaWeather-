@@ -94,6 +94,67 @@ public final class WeatherData {
         return out;
     }
 
+
+    public static JSONObject fetchWarnings() throws Exception {
+        String address = "https://alerts.metservice.com/cap/rss";
+        HttpURLConnection connection = (HttpURLConnection) new URL(address).openConnection();
+        connection.setRequestMethod("GET");
+        connection.setConnectTimeout(9000);
+        connection.setReadTimeout(11000);
+        connection.setRequestProperty("User-Agent", "WeatherAndRiversNZ/1.3 (https://github.com/vegajames087-cmyk/TakakaWeather-)");
+        connection.setRequestProperty("Accept", "application/rss+xml,application/xml,text/xml");
+        try {
+            int status = connection.getResponseCode();
+            if (status < 200 || status >= 300) throw new Exception("MetService warning feed HTTP " + status);
+            StringBuilder body = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) body.append(line).append('\\n');
+            }
+            String xml = body.toString();
+            JSONArray active = new JSONArray();
+            Matcher items = Pattern.compile("(?is)<item\\b[^>]*>(.*?)</item>").matcher(xml);
+            while (items.find()) {
+                String item = items.group(1);
+                String title = xmlTag(item, "title");
+                String description = xmlTag(item, "description");
+                String link = xmlTag(item, "link");
+                String text = (title + " " + description).toLowerCase(Locale.ROOT);
+                if (!(text.contains("golden bay") || text.contains("nelson") || text.contains("tasman")
+                    || text.contains("northwest nelson") || text.contains("north-west nelson")
+                    || text.contains("motueka") || text.contains("kahurangi") || text.contains("buller")
+                    || text.contains("tākaka") || text.contains("takaka"))) continue;
+                JSONObject warning = new JSONObject();
+                warning.put("active", true);
+                warning.put("title", title.isEmpty() ? "MetService weather alert" : title);
+                warning.put("area", "Golden Bay / Tasman region (matched from MetService alert text)");
+                warning.put("description", stripMarkup(description));
+                warning.put("url", link.isEmpty() ? "https://www.metservice.com/warnings/home" : link);
+                active.put(warning);
+            }
+            JSONObject result = new JSONObject();
+            result.put("warnings", active);
+            result.put("checkedAt", System.currentTimeMillis());
+            result.put("source", address);
+            return result;
+        } finally { connection.disconnect(); }
+    }
+
+    private static String xmlTag(String xml, String tag) {
+        Matcher m = Pattern.compile("(?is)<" + tag + "(?:\\s+[^>]*)?>(.*?)</" + tag + ">").matcher(xml);
+        if (!m.find()) return "";
+        return m.group(1).replaceAll("<!\\[CDATA\\[", "").replaceAll("\\]\\]>", "")
+            .replaceAll("(?is)<[^>]+>", " ").replace("&amp;", "&").replace("&lt;", "<")
+            .replace("&gt;", ">").replace("&quot;", "\\"").replace("&#39;", "'")
+            .replaceAll("\\s+", " ").trim();
+    }
+
+    private static String stripMarkup(String value) {
+        return value == null ? "" : value.replaceAll("(?is)<[^>]+>", " ")
+            .replaceAll("\\s+", " ").replace("&amp;", "&").replace("&lt;", "<")
+            .replace("&gt;", ">").trim();
+    }
+
     private static JSONObject getJson(String address, String userAgent) throws Exception {
         HttpURLConnection connection = (HttpURLConnection) new URL(address).openConnection();
         connection.setRequestMethod("GET");
