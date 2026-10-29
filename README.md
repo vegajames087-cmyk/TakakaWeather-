@@ -4,9 +4,10 @@ Android app and home-screen widget with a tactical field-instrument interface.
 
 ## Features
 
-- Location selector for Tākaka, Pōhara, Collingwood, Tata Beach, Wainui Bay, Aorere Valley, Paturau, Anatori, Tōtaranui and Kahurangi Lighthouse.
-- Native forecast requests from Open-Meteo's ECMWF model and MET Norway's Locationforecast API; source errors are shown instead of substituting invented numbers.
-- Live Tākaka at Kotinga and Tākaka at Harwoods water level, hourly level change, flow, peak flow, peak water level and peak time from Tasman District Council's official overview table.
+- Location selector for Tākaka, Rameka, East Tākaka, Pōhara, Collingwood, Bainham, Rockville, Tata Beach, Wainui Bay, Aorere Valley, Paturau, Anatori, Tōtaranui and Kahurangi Lighthouse.
+- Native forecast requests from Open-Meteo's ECMWF model and MET Norway (YR) Locationforecast API; source errors are shown instead of substituting invented numbers.
+- Third weather panel combines ECMWF and YR temperature, rainfall, wind, gust and humidity values by averaging available model values; it labels single-model fallback when only one model is available.
+- Selectable river gauges from Tasman District Council's official overview table, including Tākaka at Kotinga and Tākaka at Harwoods where available; displays available level, hourly change, flow and peak readings.
 - Council-provided 7-day and 30-day river-flow graphs embedded directly in the dashboard, with a link to the council's configurable hourly history table.
 - Home-screen widget with current Tākaka ECMWF conditions and the two Tākaka river gauges.
 - WorkManager network-constrained widget refresh, scheduled every 30 minutes. Readings are cleared when a refresh fails so the widget does not present stale values as current.
