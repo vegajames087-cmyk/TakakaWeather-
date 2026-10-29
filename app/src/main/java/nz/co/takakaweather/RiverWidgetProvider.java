@@ -10,8 +10,6 @@ import android.widget.RemoteViews;
 
 import org.json.JSONObject;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -56,7 +54,7 @@ public class RiverWidgetProvider extends AppWidgetProvider {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             views.setOnClickPendingIntent(R.id.widget_root, pending);
             if (weather != null) {
-                JSONObject current = weather.optJSONObject("current");
+                JSONObject current = weather;
                 if (current != null) {
                     views.setTextViewText(R.id.widget_weather_temp, format(current.optDouble("temperature", Double.NaN)) + "°C");
                     views.setTextViewText(R.id.widget_weather_wind, "WIND " + format(current.optDouble("wind", Double.NaN)) + " km/h");
@@ -68,11 +66,11 @@ public class RiverWidgetProvider extends AppWidgetProvider {
                 JSONObject h = data.optJSONObject("harwoods");
                 if (k != null) {
                     views.setTextViewText(R.id.widget_k_flow, format(k.optDouble("flow", Double.NaN)) + " m³/s");
-                    views.setTextViewText(R.id.widget_k_level, "LEVEL " + format(k.optDouble("level", Double.NaN)) + " mm");
+                    views.setTextViewText(R.id.widget_k_level, "LEVEL " + formatLevel(k.optDouble("level", Double.NaN)) + " mm");
                 }
                 if (h != null) {
                     views.setTextViewText(R.id.widget_h_flow, format(h.optDouble("flow", Double.NaN)) + " m³/s");
-                    views.setTextViewText(R.id.widget_h_level, "LEVEL " + format(h.optDouble("level", Double.NaN)) + " mm");
+                    views.setTextViewText(R.id.widget_h_level, "LEVEL " + formatLevel(h.optDouble("level", Double.NaN)) + " mm");
                 }
                 String time = k != null ? k.optString("time", "SOURCE TIME UNKNOWN") : "SOURCE TIME UNKNOWN";
                 views.setTextViewText(R.id.widget_status, "● DATA");
@@ -83,6 +81,11 @@ public class RiverWidgetProvider extends AppWidgetProvider {
             }
             manager.updateAppWidget(id, views);
         }
+    }
+
+    private static String formatLevel(double n) {
+        if (Double.isNaN(n) || Double.isInfinite(n)) return "—";
+        return String.format(Locale.getDefault(), "%.0f", n);
     }
 
     private static String format(double n) {
