@@ -66,6 +66,7 @@ public final class RiverData {
             Matcher fallbackRows = Pattern.compile("(?im)^\\s*([^\\n]*Takaka at (?:Kotinga|Harwoods)[^\\n]*)").matcher(rowsOnly);
             while (fallbackRows.find()) {
                 String line = strip(fallbackRows.group(1)).replace("&nbsp;", " ").trim();
+                line = line.replaceAll("^\\s*\\|+", "").replaceAll("\\|+\\s*$", "");
                 String[] columns = line.split("\\s*\\|\\s*");
                 String key = gaugeKey(line);
                 JSONObject gauge = parseFlat(columns);
