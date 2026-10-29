@@ -8,8 +8,11 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.time.ZoneId;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
 
 public final class WeatherData {
     private WeatherData() {}
@@ -46,7 +49,7 @@ public final class WeatherData {
             if (item == null) continue;
             String time = item.optString("time", "");
             try {
-                if (Instant.parse(time).toEpochMilli() >= now) { selected = item; break; }
+                if (parseIsoEpoch(time) >= now) { selected = item; break; }
             } catch (Exception ignored) {}
             if (selected == null) selected = item;
         }
@@ -90,6 +93,16 @@ public final class WeatherData {
         } finally {
             connection.disconnect();
         }
+    }
+
+    private static long parseIsoEpoch(String value) {
+        try {
+            String normalized = value.replaceAll("\\.\\d+Z$", "Z");
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+            formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+            Date parsed = formatter.parse(normalized);
+            return parsed == null ? Long.MIN_VALUE : parsed.getTime();
+        } catch (ParseException | IllegalArgumentException ignored) { return Long.MIN_VALUE; }
     }
 
     private static double multiply(double value, double multiplier) {
