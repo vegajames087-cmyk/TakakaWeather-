@@ -35,7 +35,7 @@ public class WeatherWidget extends AppWidgetProvider {
  private static void refresh(Context app){
   int s=app.getSharedPreferences("settings",Context.MODE_PRIVATE).getInt("location",0);if(s<0||s>=MainActivity.NAMES.length)s=0;
   String town=MainActivity.NAMES[s];double lat=MainActivity.LATS[s],lon=MainActivity.LONS[s];
-  String ecmwf="ECMWF unavailable",yr="Yr.no unavailable",river="River gauges: unavailable",warning="Warnings: unable to check";Bitmap graph=null;
+  String ecmwf="ECMWF unavailable",yr="Yr.no unavailable",river="River gauges: unavailable",warning="Warnings: unable to check";Bitmap graph=null;Bitmap riverGraph=null;
   try{
    String url=String.format(Locale.US,"https://api.open-meteo.com/v1/forecast?latitude=%.4f&longitude=%.4f&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&hourly=temperature_2m&forecast_days=2&timezone=Pacific%%2FAuckland&models=ecmwf_ifs025",lat,lon);
    JSONObject root=new JSONObject(new String(fetch(url),"UTF-8"));JSONObject now=root.getJSONObject("current");
@@ -55,7 +55,7 @@ public class WeatherWidget extends AppWidgetProvider {
      if(values.size()>=5){String flow=values.get(4).trim();if(flow.matches("[0-9]+(?:\\.[0-9]+)?")){saveFlow(app,name,flow);if(sb.length()>0)sb.append("\n");sb.append(name).append(": ").append(flow).append(" m³/s · ").append(values.get(1));}}break;
     }
    }
-   if(sb.length()>0)river="TDC provisional flows:\n"+sb;
+   if(sb.length()>0)river="TDC provisional flows:\n"+sb;riverGraph=plotRiverHistory(app,"Takaka at Kotinga");
   }catch(Exception ignored){}
   try{
    DocumentBuilderFactory f=DocumentBuilderFactory.newInstance();f.setFeature("http://apache.org/xml/features/disallow-doctype-decl",true);f.setFeature("http://xml.org/sax/features/external-general-entities",false);f.setFeature("http://xml.org/sax/features/external-parameter-entities",false);
@@ -63,7 +63,20 @@ public class WeatherWidget extends AppWidgetProvider {
    for(int i=0;i<items.getLength();i++){Element item=(Element)items.item(i);NodeList titles=item.getElementsByTagName("title");if(titles.getLength()==0)continue;String title=titles.item(0).getTextContent();String lower=(title+" "+item.getTextContent()).toLowerCase(Locale.ROOT);if(lower.contains("nelson")||lower.contains("tasman")||lower.contains("golden bay")||lower.contains("buller")||lower.contains("northwest")){warning="MetService: "+title;break;}}
   }catch(Exception ignored){}
   AppWidgetManager m=AppWidgetManager.getInstance(app);int[] ids=m.getAppWidgetIds(new ComponentName(app,WeatherWidget.class));
-  for(int id:ids){RemoteViews v=new RemoteViews(app.getPackageName(),R.layout.weather_widget);v.setTextViewText(R.id.widget_conditions,town+"\n"+ecmwf+"\n"+yr);v.setTextViewText(R.id.widget_rivers,river);v.setTextViewText(R.id.widget_warning,warning);if(graph!=null)v.setImageViewBitmap(R.id.widget_graph,graph);else v.setImageViewResource(R.id.widget_graph,android.R.color.transparent);m.updateAppWidget(id,v);}
+  for(int id:ids){RemoteViews v=new RemoteViews(app.getPackageName(),R.layout.weather_widget);v.setTextViewText(R.id.widget_conditions,town+"\n"+ecmwf+"\n"+yr);v.setTextViewText(R.id.widget_rivers,river);v.setTextViewText(R.id.widget_warning,warning);if(graph!=null)v.setImageViewBitmap(R.id.widget_graph,graph);else v.setImageViewResource(R.id.widget_graph,android.R.color.transparent);if(riverGraph!=null)v.setImageViewBitmap(R.id.widget_river_graph,riverGraph);else v.setImageViewResource(R.id.widget_river_graph,android.R.color.transparent);m.updateAppWidget(id,v);}
+ }
+ private static Bitmap plotRiverHistory(Context app,String name){
+  try{
+   String key="river_"+name.replaceAll("[^A-Za-z]","");
+   JSONArray a=new JSONArray(app.getSharedPreferences("river_history",Context.MODE_PRIVATE).getString(key,"[]"));
+   if(a.length()<2)return null;
+   double low=Double.MAX_VALUE,high=-Double.MAX_VALUE;long first=Long.MAX_VALUE,last=0;
+   for(int i=0;i<a.length();i++){JSONObject p=a.getJSONObject(i);double v=p.getDouble("flow");long t=p.getLong("time");low=Math.min(low,v);high=Math.max(high,v);first=Math.min(first,t);last=Math.max(last,t);}
+   if(last<=first)return null;
+   Bitmap b=Bitmap.createBitmap(600,90,Bitmap.Config.ARGB_8888);Canvas c=new Canvas(b);c.drawColor(Color.rgb(20,43,54));Paint pen=new Paint(3);pen.setColor(Color.rgb(181,232,255));pen.setStrokeWidth(3);pen.setStyle(Paint.Style.STROKE);
+   for(int i=1;i<a.length();i++){JSONObject p=a.getJSONObject(i-1),q=a.getJSONObject(i);float x1=10+580f*(p.getLong("time")-first)/(last-first),x2=10+580f*(q.getLong("time")-first)/(last-first);float y1=75-(float)((p.getDouble("flow")-low)*60/Math.max(0.001,high-low)),y2=75-(float)((q.getDouble("flow")-low)*60/Math.max(0.001,high-low));c.drawLine(x1,y1,x2,y2,pen);}
+   return b;
+  }catch(Exception e){return null;}
  }
  private static void saveFlow(Context app,String name,String value){
   try{
