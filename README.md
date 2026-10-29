@@ -1,20 +1,29 @@
-# Weather & Rivers — Android home-screen widget (source project)
+# Weather & Rivers — Golden Bay / Kahurangi Coast
 
-This is **not an APK**. Build it with Android Studio (JDK 17, Android SDK 35). The project is intentionally dependency-light and uses Java.
+Android app and home-screen widget with a tactical field-instrument interface.
 
-1. Unzip the project on a computer.
-2. Android Studio → Open → select `TakakaWeatherAndroid`.
-3. Allow Gradle sync and install the Android SDK if prompted.
-4. Build → Build Bundle(s) / APK(s) → Build APK(s).
-5. Find `app/build/outputs/apk/debug/app-debug.apk` and copy it to your phone.
-6. On Android open the APK in Files, allow installs from that source when prompted, and install.
-7. Long-press an empty home-screen area → Widgets → Weather & Rivers → drag the widget onto your home screen; resize by long-pressing it.
-8. Tap the widget to open the dashboard and change location; the widget updates from the saved location.
+## Features
 
-## Honest limitations
-- Native widget shows **one ECMWF feed**, not three separate live provider readings. The in-app web dashboard has ECMWF and Yr data and MetService links.
-- Warning strip is a **link/prompt**, not an independently verified live warning feed.
-- River gauges and charts are accessed in the dashboard; the native widget does **not** render river-flow charts or real-time m³/s readings.
-- Internet is required; refresh interval is approximate (Android may defer updates).
-- GPS support in a local WebView can vary by device. Manual location search is recommended.
-- This project has not been compiled or device-tested in this environment.
+- Location selector for Tākaka, Pōhara, Collingwood, Tata Beach, Wainui Bay, Aorere Valley, Paturau, Anatori, Tōtaranui and Kahurangi Lighthouse.
+- Native forecast requests from Open-Meteo's ECMWF model and MET Norway's Locationforecast API; source errors are shown instead of substituting invented numbers.
+- Live Tākaka at Kotinga and Tākaka at Harwoods water level, hourly level change, flow, peak flow, peak water level and peak time from Tasman District Council's official overview table.
+- Council-provided 7-day and 30-day river-flow graphs embedded directly in the dashboard, with a link to the council's configurable hourly history table.
+- Home-screen widget with current Tākaka ECMWF conditions and the two Tākaka river gauges.
+- WorkManager network-constrained widget refresh, scheduled every 30 minutes. Readings are cleared when a refresh fails so the widget does not present stale values as current.
+- Dark olive instrument-panel design, muted green telemetry accents, amber labels and high-contrast numeric readouts.
+
+## Build
+
+Open this repository in Android Studio or use the GitHub Actions workflow. It uses JDK 17, Android SDK 35 and Gradle 8.9. The automated build runs the dashboard JavaScript syntax check, unit tests, APK compilation and archive/package checks. The generated debug APK is uploaded as the weather-rivers-debug-apk artifact.
+
+## Data and safety notes
+
+River readings are provisional council telemetry. The council's table timestamps are labelled NZST; during daylight saving, add one hour to interpret local time. River flow and level are not by themselves a river-crossing safety assessment. Do not rely on this app as the sole source for flood, weather or crossing decisions.
+
+- Tākaka at Kotinga: https://www.tasman.govt.nz/my-region/environment/environmental-data/river-flow/takaka-at-kotinga
+- Tākaka at Harwoods: https://www.tasman.govt.nz/my-region/environment/environmental-data/river-flow/takaka-harwoods
+- Official level/flow report: https://www.tasman.govt.nz/my-region/environment/environmental-data/river-flow/water-level-and-flow-report
+- Hourly flow table: https://datapages.tasman.govt.nz/hydrodata/flow.aspx
+- Weather warnings: https://www.metservice.com/warnings/home
+
+MetService's live numeric values and automated warning state are not represented as integrated API feeds in this build; the app links to the official pages. Live device-side HTTP and actual phone installation still need device-level validation after downloading the build.
