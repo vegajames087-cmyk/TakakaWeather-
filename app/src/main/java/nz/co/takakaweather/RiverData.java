@@ -117,9 +117,11 @@ public final class RiverData {
 
     private static boolean isValid(JSONObject gauge) {
         return gauge != null && gauge.has("time") && gauge.has("flow") && gauge.has("level")
-            && Double.isFinite(gauge.optDouble("flow", Double.NaN))
-            && Double.isFinite(gauge.optDouble("level", Double.NaN));
+            && finite(gauge.optDouble("flow", Double.NaN))
+            && finite(gauge.optDouble("level", Double.NaN));
     }
+
+    private static boolean finite(double value) { return !Double.isNaN(value) && !Double.isInfinite(value); }
 
     private static boolean isSiteName(String value) {
         String lower = value == null ? "" : value.toLowerCase();
