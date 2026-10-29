@@ -26,16 +26,13 @@ public class RiverWidgetProvider extends AppWidgetProvider {
 
     @Override public void onUpdate(Context context, AppWidgetManager manager, int[] ids) {
         for (int id : ids) showLoading(context, manager, id);
+        schedulePeriodic(context);
         enqueueOneTime(context);
     }
 
     @Override public void onEnabled(Context context) {
         super.onEnabled(context);
-        Constraints constraints = networkConstraints();
-        PeriodicWorkRequest periodic = new PeriodicWorkRequest.Builder(RiverRefreshWorker.class, 30, TimeUnit.MINUTES)
-            .setConstraints(constraints).build();
-        WorkManager.getInstance(context.getApplicationContext()).enqueueUniquePeriodicWork(
-            "weather-rivers-widget-periodic", ExistingPeriodicWorkPolicy.KEEP, periodic);
+        schedulePeriodic(context);
         enqueueOneTime(context);
     }
 
@@ -47,6 +44,13 @@ public class RiverWidgetProvider extends AppWidgetProvider {
 
     private static Constraints networkConstraints() {
         return new Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build();
+    }
+
+    private static void schedulePeriodic(Context context) {
+        PeriodicWorkRequest periodic = new PeriodicWorkRequest.Builder(RiverRefreshWorker.class, 30, TimeUnit.MINUTES)
+            .setConstraints(networkConstraints()).build();
+        WorkManager.getInstance(context.getApplicationContext()).enqueueUniquePeriodicWork(
+            "weather-rivers-widget-periodic", ExistingPeriodicWorkPolicy.KEEP, periodic);
     }
 
     private static void enqueueOneTime(Context context) {
