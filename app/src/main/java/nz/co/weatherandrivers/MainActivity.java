@@ -15,7 +15,7 @@ public class MainActivity extends Activity {
   static final double[] LONS={172.81,172.89,173.02,172.68,172.60,172.68,172.71,172.43,172.43,173.00,173.06};
   @Override public void onCreate(Bundle state){
     super.onCreate(state);
-    LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(32,48,32,32);
+    ScrollView scroll=new ScrollView(this);LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(32,32,32,32);scroll.addView(root);
     TextView title=new TextView(this);title.setText("Weather & Rivers\nGolden Bay & Kahurangi coast");title.setTextSize(22);root.addView(title);
     Spinner spinner=new Spinner(this);ArrayAdapter<String> adapter=new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,NAMES);spinner.setAdapter(adapter);root.addView(spinner);
     SharedPreferences prefs=getSharedPreferences("settings",MODE_PRIVATE);spinner.setSelection(prefs.getInt("location",0));
@@ -25,6 +25,6 @@ public class MainActivity extends Activity {
     Button allRivers=new Button(this);allRivers.setText("Open all live river gauges");root.addView(allRivers);allRivers.setOnClickListener(v->{Intent web=new Intent(Intent.ACTION_VIEW,Uri.parse("https://www.tasman.govt.nz/my-region/environment/environmental-data/river-flow/water-level-and-flow-report"));startActivity(web);});
     Button warnings=new Button(this);warnings.setText("Open official weather warnings");root.addView(warnings);warnings.setOnClickListener(v->{Intent web=new Intent(Intent.ACTION_VIEW,Uri.parse("https://www.metservice.com/warnings/home"));startActivity(web);});
     save.setOnClickListener(v->{prefs.edit().putInt("location",spinner.getSelectedItemPosition()).apply();AppWidgetManager manager=AppWidgetManager.getInstance(this);int[] ids=manager.getAppWidgetIds(new ComponentName(this,WeatherWidget.class));sendBroadcast(new Intent(this,WeatherWidget.class).setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE).putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS,ids));Toast.makeText(this,"Location saved",Toast.LENGTH_SHORT).show();});
-    setContentView(root);
+    setContentView(scroll);
   }
 }
