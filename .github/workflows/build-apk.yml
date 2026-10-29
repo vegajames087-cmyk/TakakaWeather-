@@ -17,6 +17,23 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - name: Restore stable debug signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: weather-rivers-debug-signing-v1
+      - name: Create debug signing key if not cached
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.android"
+          if [ ! -s "$HOME/.android/debug.keystore" ]; then
+            keytool -genkeypair -noprompt -v \
+              -keystore "$HOME/.android/debug.keystore" \
+              -storepass android -alias androiddebugkey -keypass android \
+              -dname "CN=Android Debug,O=Android,C=US" \
+              -keyalg RSA -keysize 2048 -validity 10000
+          fi
+          test -s "$HOME/.android/debug.keystore"
       - name: Locate Android SDK
         shell: bash
         run: |
