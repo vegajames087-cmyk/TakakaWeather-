@@ -87,7 +87,7 @@ public class RiverWidgetProvider extends AppWidgetProvider {
                 if (current != null) {
                     views.setTextViewText(R.id.widget_weather_temp, format(current.optDouble("temperature", Double.NaN)) + "°C");
                     views.setTextViewText(R.id.widget_weather_wind, "WIND " + format(current.optDouble("wind", Double.NaN)) + " km/h");
-                    views.setTextViewText(R.id.widget_weather_rain, "RAIN " + format(current.optDouble("rain", Double.NaN)) + " mm / ECMWF");
+                    views.setTextViewText(R.id.widget_weather_rain, "RAIN " + format(current.optDouble("rain", Double.NaN)) + " mm / " + current.optString("time", "ECMWF FORECAST"));
                 }
             } else {
                 views.setTextViewText(R.id.widget_weather_temp, "—°C");
@@ -100,10 +100,12 @@ public class RiverWidgetProvider extends AppWidgetProvider {
                 if (k != null) {
                     views.setTextViewText(R.id.widget_k_flow, format(k.optDouble("flow", Double.NaN)) + " m³/s");
                     views.setTextViewText(R.id.widget_k_level, "LEVEL " + formatLevel(k.optDouble("level", Double.NaN)) + " mm");
+                    views.setProgressBar(R.id.widget_k_bar, 100, ratio(k.optDouble("flow", Double.NaN), k.optDouble("peak", Double.NaN)), false);
                 }
                 if (h != null) {
                     views.setTextViewText(R.id.widget_h_flow, format(h.optDouble("flow", Double.NaN)) + " m³/s");
                     views.setTextViewText(R.id.widget_h_level, "LEVEL " + formatLevel(h.optDouble("level", Double.NaN)) + " mm");
+                    views.setProgressBar(R.id.widget_h_bar, 100, ratio(h.optDouble("flow", Double.NaN), h.optDouble("peak", Double.NaN)), false);
                 }
                 String time = k != null ? k.optString("time", "SOURCE TIME UNKNOWN") : "SOURCE TIME UNKNOWN";
                 views.setTextViewText(R.id.widget_status, "● DATA");
@@ -113,12 +115,19 @@ public class RiverWidgetProvider extends AppWidgetProvider {
                 views.setTextViewText(R.id.widget_k_level, "LEVEL —");
                 views.setTextViewText(R.id.widget_h_flow, "— m³/s");
                 views.setTextViewText(R.id.widget_h_level, "LEVEL —");
+                views.setProgressBar(R.id.widget_k_bar, 100, 0, false);
+                views.setProgressBar(R.id.widget_h_bar, 100, 0, false);
                 views.setTextViewText(R.id.widget_status, "OFFLINE");
                 views.setTextViewText(R.id.widget_updated, "NO NEW DATA / " + (failure == null ? "CHECK CONNECTION" : "CHECK APP FOR STATUS"));
             }
             manager.updateAppWidget(id, views);
         }
         return data != null && weather != null;
+    }
+
+    private static int ratio(double flow, double peak) {
+        if (Double.isNaN(flow) || Double.isInfinite(flow) || Double.isNaN(peak) || Double.isInfinite(peak) || peak <= 0) return 0;
+        return Math.max(0, Math.min(100, (int)Math.round(flow / peak * 100.0)));
     }
 
     private static String formatLevel(double n) {
