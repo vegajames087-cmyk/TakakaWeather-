@@ -44,7 +44,7 @@ public class WeatherWidget extends AppWidgetProvider {
   }catch(Exception ignored){}
   try{String url=String.format(Locale.US,"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=%.4f&lon=%.4f",lat,lon);JSONObject instant=new JSONObject(new String(fetch(url),"UTF-8")).getJSONObject("properties").getJSONArray("timeseries").getJSONObject(0).getJSONObject("data").getJSONObject("instant").getJSONObject("details");yr=String.format(Locale.US,"Yr.no %.1f°C · Wind %.1f m/s",instant.getDouble("air_temperature"),instant.getDouble("wind_speed"));}catch(Exception ignored){}
   try{
-   String html=new String(fetch(RIVERS),"UTF-8");String[] names={"Takaka at Kotinga","Takaka at Harwoods","Anatoki at Happy Sams","Aorere at Devils Boots","Waingaro at Hanging Rock"};StringBuilder sb=new StringBuilder();
+   String html=new String(fetch(RIVERS),"UTF-8");String[] names={"Takaka at Kotinga","Takaka at Harwoods","Anatoki at Happy Sams","Aorere at Devils Boots","Waingaro at Hanging Rock","Fish Creek at Pupu Springs"};StringBuilder sb=new StringBuilder();
    for(String name:names){
     java.util.regex.Matcher rows=java.util.regex.Pattern.compile("(?is)<tr\\b[^>]*>.*?</tr>").matcher(html);
     while(rows.find()){
