@@ -55,31 +55,14 @@ public class WeatherWidget extends AppWidgetProvider {
   }catch(Exception ignored){}
   try{String url=String.format(Locale.US,"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=%.4f&lon=%.4f",lat,lon);JSONObject instant=new JSONObject(new String(fetch(url),"UTF-8")).getJSONObject("properties").getJSONArray("timeseries").getJSONObject(0).getJSONObject("data").getJSONObject("instant").getJSONObject("details");yr=String.format(Locale.US,"Yr.no %.1f°C · Wind %.1f m/s",instant.getDouble("air_temperature"),instant.getDouble("wind_speed"));}catch(Exception ignored){}
   try{
-   String html=new String(fetch(RIVERS),"UTF-8");String[] names={"Takaka at Kotinga","Takaka at Harwoods","Anatoki at Happy Sams","Aorere at Devils Boots","Waingaro at Hanging Rock","Fish Creek at Pupu Springs"};StringBuilder sb=new StringBuilder();
-   for(String name:names){
-    java.util.regex.Matcher rows=java.util.regex.Pattern.compile("(?is)<tr\\b[^>]*>(.*?)</tr>").matcher(html);
-    while(rows.find()){
-     String row=rows.group(1);
-     java.util.regex.Matcher cellMatcher=java.util.regex.Pattern.compile("(?is)<t[dh]\\b[^>]*>(.*?)</t[dh]>").matcher(row);
-     java.util.ArrayList<String> values=new java.util.ArrayList<>();
-     while(cellMatcher.find()){
-      String value=android.text.Html.fromHtml(cellMatcher.group(1),android.text.Html.FROM_HTML_MODE_LEGACY).toString().replace('\u00a0',' ').trim().replaceAll("\\s+"," ");
-      values.add(value);
-     }
-     if(values.isEmpty())continue;
-     String site=values.get(0).toLowerCase(Locale.ROOT).replace("ā","a");
-     if(!site.equals(name.toLowerCase(Locale.ROOT)))continue;
-     if(values.size()>=5){
-      String sourceTime=values.get(1);
-      String flow=values.get(4).replace(",","");
-      if(flow.matches("[0-9]+(?:\\.[0-9]+)?")){
-       saveFlow(app,name,flow,sourceTime);
-       if(sb.length()>0)sb.append("\n");
-       sb.append(name).append(": ").append(flow).append(" m³/s · ").append(sourceTime);
-      }
-     }
-     break;
-    }
+   String html=new String(fetch(RIVERS),"UTF-8");
+   String[] names={"Takaka at Kotinga","Takaka at Harwoods","Anatoki at Happy Sams","Aorere at Devils Boots","Waingaro at Hanging Rock","Fish Creek at Pupu Springs"};
+   java.util.List<RiverTableParser.Reading> readings=RiverTableParser.parse(html,names);
+   StringBuilder sb=new StringBuilder();
+   for(RiverTableParser.Reading reading:readings){
+    saveFlow(app,reading.site,reading.flow,reading.observedAt);
+    if(sb.length()>0)sb.append("\n");
+    sb.append(reading.site).append(": ").append(reading.flow).append(" m³/s · ").append(reading.observedAt);
    }
    if(sb.length()>0)river="TDC provisional flows:\n"+sb;
    else river="TDC feed reached; no matching river rows parsed";
