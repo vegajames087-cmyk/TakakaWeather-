@@ -8,23 +8,52 @@ import android.content.Context;
 import android.content.Intent;
 import android.widget.RemoteViews;
 
+import androidx.work.Constraints;
+import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.ExistingWorkPolicy;
+import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+
 import org.json.JSONObject;
 
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class RiverWidgetProvider extends AppWidgetProvider {
-    private static final ExecutorService IO = Executors.newSingleThreadExecutor();
 
     @Override public void onUpdate(Context context, AppWidgetManager manager, int[] ids) {
         for (int id : ids) showLoading(context, manager, id);
-        IO.execute(() -> refreshAll(context.getApplicationContext()));
+        enqueueOneTime(context);
     }
 
     @Override public void onEnabled(Context context) {
         super.onEnabled(context);
-        IO.execute(() -> refreshAll(context.getApplicationContext()));
+        Constraints constraints = networkConstraints();
+        PeriodicWorkRequest periodic = new PeriodicWorkRequest.Builder(RiverRefreshWorker.class, 30, TimeUnit.MINUTES)
+            .setConstraints(constraints).build();
+        WorkManager.getInstance(context.getApplicationContext()).enqueueUniquePeriodicWork(
+            "weather-rivers-widget-periodic", ExistingPeriodicWorkPolicy.KEEP, periodic);
+        enqueueOneTime(context);
+    }
+
+    @Override public void onDisabled(Context context) {
+        WorkManager.getInstance(context.getApplicationContext()).cancelUniqueWork("weather-rivers-widget-refresh");
+        WorkManager.getInstance(context.getApplicationContext()).cancelUniqueWork("weather-rivers-widget-periodic");
+        super.onDisabled(context);
+    }
+
+    private static Constraints networkConstraints() {
+        return new Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build();
+    }
+
+    private static void enqueueOneTime(Context context) {
+        OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(RiverRefreshWorker.class)
+            .setConstraints(networkConstraints()).build();
+        WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork(
+            "weather-rivers-widget-refresh", ExistingWorkPolicy.REPLACE, request);
     }
 
     private static void showLoading(Context context, AppWidgetManager manager, int id) {
@@ -37,10 +66,10 @@ public class RiverWidgetProvider extends AppWidgetProvider {
         manager.updateAppWidget(id, views);
     }
 
-    private static void refreshAll(Context context) {
+    public static boolean refreshAll(Context context) {
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
         int[] ids = manager.getAppWidgetIds(new ComponentName(context, RiverWidgetProvider.class));
-        if (ids == null || ids.length == 0) return;
+        if (ids == null || ids.length == 0) return true;
         JSONObject data = null;
         JSONObject weather = null;
         String failure = null;
@@ -60,6 +89,10 @@ public class RiverWidgetProvider extends AppWidgetProvider {
                     views.setTextViewText(R.id.widget_weather_wind, "WIND " + format(current.optDouble("wind", Double.NaN)) + " km/h");
                     views.setTextViewText(R.id.widget_weather_rain, "RAIN " + format(current.optDouble("rain", Double.NaN)) + " mm / ECMWF");
                 }
+            } else {
+                views.setTextViewText(R.id.widget_weather_temp, "—°C");
+                views.setTextViewText(R.id.widget_weather_wind, "WIND —");
+                views.setTextViewText(R.id.widget_weather_rain, "RAIN — mm / ECMWF");
             }
             if (data != null) {
                 JSONObject k = data.optJSONObject("kotinga");
@@ -76,11 +109,16 @@ public class RiverWidgetProvider extends AppWidgetProvider {
                 views.setTextViewText(R.id.widget_status, "● DATA");
                 views.setTextViewText(R.id.widget_updated, "COUNCIL SOURCE " + time);
             } else {
+                views.setTextViewText(R.id.widget_k_flow, "— m³/s");
+                views.setTextViewText(R.id.widget_k_level, "LEVEL —");
+                views.setTextViewText(R.id.widget_h_flow, "— m³/s");
+                views.setTextViewText(R.id.widget_h_level, "LEVEL —");
                 views.setTextViewText(R.id.widget_status, "OFFLINE");
                 views.setTextViewText(R.id.widget_updated, "NO NEW DATA / " + (failure == null ? "CHECK CONNECTION" : "CHECK APP FOR STATUS"));
             }
             manager.updateAppWidget(id, views);
         }
+        return data != null && weather != null;
     }
 
     private static String formatLevel(double n) {
