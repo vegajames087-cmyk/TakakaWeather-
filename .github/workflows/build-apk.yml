@@ -1,7 +1,6 @@
 name: Build Android APK
 on:
-  push:
-    branches: [ main ]
+  # Build on demand while the integrated telemetry code is being assembled.
   workflow_dispatch:
 permissions:
   contents: read
