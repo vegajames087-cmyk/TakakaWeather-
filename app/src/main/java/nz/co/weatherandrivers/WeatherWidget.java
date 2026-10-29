@@ -45,8 +45,17 @@ public class WeatherWidget extends AppWidgetProvider {
   try{String url=String.format(Locale.US,"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=%.4f&lon=%.4f",lat,lon);JSONObject instant=new JSONObject(new String(fetch(url),"UTF-8")).getJSONObject("properties").getJSONArray("timeseries").getJSONObject(0).getJSONObject("data").getJSONObject("instant").getJSONObject("details");yr=String.format(Locale.US,"Yr.no %.1f°C · Wind %.1f m/s",instant.getDouble("air_temperature"),instant.getDouble("wind_speed"));}catch(Exception ignored){}
   try{
    String html=new String(fetch(RIVERS),"UTF-8");String[] names={"Takaka at Kotinga","Takaka at Harwoods","Anatoki at Happy Sams","Aorere at Devils Boots"};StringBuilder sb=new StringBuilder();
-   for(String name:names){int p=html.toLowerCase(Locale.ROOT).indexOf(name.toLowerCase(Locale.ROOT));if(p<0)continue;int end=html.indexOf("</tr>",p);if(end<0||end-p>2500)continue;String row=html.substring(p,end).replaceAll("(?is)<[^>]+>"," ").replace("&nbsp;"," ").replaceAll("\\s+"," ").trim();if(sb.length()>0)sb.append("\n");sb.append(row.length()>95?row.substring(0,95):row);}
-   if(sb.length()>0)river="TDC gauges (check timestamp):\n"+sb;
+   for(String name:names){
+    java.util.regex.Matcher rows=java.util.regex.Pattern.compile("(?is)<tr\\\\b[^>]*>.*?</tr>").matcher(html);
+    while(rows.find()){
+     String row=rows.group().replaceAll("(?is)<(script|style)\\\\b[^>]*>.*?</\\\\1>","").replaceAll("(?is)<[^>]+>","|").replace("&nbsp;"," ").replace("&#160;"," ");
+     row=row.replaceAll("\\\\s+"," ").replaceAll("\\\\|+","|");
+     if(!row.toLowerCase(Locale.ROOT).contains(name.toLowerCase(Locale.ROOT)))continue;
+     String[] cells=row.split("\\\\|");java.util.ArrayList<String> values=new java.util.ArrayList<>();for(String cell:cells)if(!cell.trim().isEmpty())values.add(cell.trim());
+     if(values.size()>=5){if(sb.length()>0)sb.append("\\n");sb.append(name).append(": ").append(values.get(4)).append(" m³/s · ").append(values.get(1));}break;
+    }
+   }
+   if(sb.length()>0)river="TDC provisional flows:\\n"+sb;
   }catch(Exception ignored){}
   try{
    DocumentBuilderFactory f=DocumentBuilderFactory.newInstance();f.setFeature("http://apache.org/xml/features/disallow-doctype-decl",true);f.setFeature("http://xml.org/sax/features/external-general-entities",false);f.setFeature("http://xml.org/sax/features/external-parameter-entities",false);
