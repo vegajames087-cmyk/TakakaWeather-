@@ -4,5 +4,7 @@
 <TextView android:id="@+id/widget_conditions" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Loading weather…" android:textColor="#E1E8EA" android:textSize="12sp"/>
 <ImageView android:id="@+id/widget_graph" android:layout_width="match_parent" android:layout_height="54dp" android:contentDescription="ECMWF next 24 hours temperature graph"/>
 <TextView android:id="@+id/widget_rivers" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="River gauges: loading…" android:textColor="#B5E8FF" android:textSize="11sp"/>
+<TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="KOTINGA FLOW TREND · recorded on this device" android:textColor="#B5E8FF" android:textSize="10sp"/>
+<ImageView android:id="@+id/widget_river_graph" android:layout_width="match_parent" android:layout_height="45dp" android:contentDescription="Kotinga river flow trend from locally recorded readings"/>
 <TextView android:id="@+id/widget_warning" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Warnings: checking…" android:textColor="#FFCE83" android:textSize="11sp"/>
 </LinearLayout>
