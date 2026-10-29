@@ -46,12 +46,12 @@ public class WeatherWidget extends AppWidgetProvider {
   try{
    String html=new String(fetch(RIVERS),"UTF-8");String[] names={"Takaka at Kotinga","Takaka at Harwoods","Anatoki at Happy Sams","Aorere at Devils Boots"};StringBuilder sb=new StringBuilder();
    for(String name:names){
-    java.util.regex.Matcher rows=java.util.regex.Pattern.compile("(?is)<tr\\\\b[^>]*>.*?</tr>").matcher(html);
+    java.util.regex.Matcher rows=java.util.regex.Pattern.compile("(?is)<tr\\b[^>]*>.*?</tr>").matcher(html);
     while(rows.find()){
-     String row=rows.group().replaceAll("(?is)<(script|style)\\\\b[^>]*>.*?</\\\\1>","").replaceAll("(?is)<[^>]+>","|").replace("&nbsp;"," ").replace("&#160;"," ");
-     row=row.replaceAll("\\\\s+"," ").replaceAll("\\\\|+","|");
+     String row=rows.group().replaceAll("(?is)<(script|style)\\b[^>]*>.*?</\\1>","").replaceAll("(?is)<[^>]+>","|").replace("&nbsp;"," ").replace("&#160;"," ");
+     row=row.replaceAll("\\s+"," ").replaceAll("\\|+","|");
      if(!row.toLowerCase(Locale.ROOT).contains(name.toLowerCase(Locale.ROOT)))continue;
-     String[] cells=row.split("\\\\|");java.util.ArrayList<String> values=new java.util.ArrayList<>();for(String cell:cells)if(!cell.trim().isEmpty())values.add(cell.trim());
+     String[] cells=row.split("\\|");java.util.ArrayList<String> values=new java.util.ArrayList<>();for(String cell:cells)if(!cell.trim().isEmpty())values.add(cell.trim());
      if(values.size()>=5){if(sb.length()>0)sb.append("\\n");sb.append(name).append(": ").append(values.get(4)).append(" m³/s · ").append(values.get(1));}break;
     }
    }
