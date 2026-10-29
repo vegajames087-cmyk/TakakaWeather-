@@ -52,7 +52,7 @@ public class WeatherWidget extends AppWidgetProvider {
      row=row.replaceAll("\\s+"," ").replaceAll("\\|+","|");
      if(!row.toLowerCase(Locale.ROOT).contains(name.toLowerCase(Locale.ROOT)))continue;
      String[] cells=row.split("\\|");java.util.ArrayList<String> values=new java.util.ArrayList<>();for(String cell:cells)if(!cell.trim().isEmpty())values.add(cell.trim());
-     if(values.size()>=5){if(sb.length()>0)sb.append("\n");sb.append(name).append(": ").append(values.get(4)).append(" m³/s · ").append(values.get(1));}break;
+     if(values.size()>=5){String flow=values.get(4).trim();if(flow.matches("[0-9]+(?:\\.[0-9]+)?")){if(sb.length()>0)sb.append("\n");sb.append(name).append(": ").append(flow).append(" m³/s · ").append(values.get(1));}}break;
     }
    }
    if(sb.length()>0)river="TDC provisional flows:\n"+sb;
