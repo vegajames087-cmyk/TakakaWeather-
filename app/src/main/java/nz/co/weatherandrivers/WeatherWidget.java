@@ -52,7 +52,7 @@ public class WeatherWidget extends AppWidgetProvider {
      row=row.replaceAll("\\s+"," ").replaceAll("\\|+","|");
      if(!row.toLowerCase(Locale.ROOT).contains(name.toLowerCase(Locale.ROOT)))continue;
      String[] cells=row.split("\\|");java.util.ArrayList<String> values=new java.util.ArrayList<>();for(String cell:cells)if(!cell.trim().isEmpty())values.add(cell.trim());
-     if(values.size()>=5){String flow=values.get(4).trim();if(flow.matches("[0-9]+(?:\\.[0-9]+)?")){saveFlow(app,name,flow);if(sb.length()>0)sb.append("\n");sb.append(name).append(": ").append(flow).append(" m³/s · ").append(values.get(1));}}break;
+     if(values.size()>=5){String flow=values.get(4).trim();if(flow.matches("[0-9]+(?:\\.[0-9]+)?")){saveFlow(app,name,flow,values.get(1));if(sb.length()>0)sb.append("\n");sb.append(name).append(": ").append(flow).append(" m³/s · ").append(values.get(1));}}break;
     }
    }
    if(sb.length()>0)river="TDC provisional flows:\n"+sb;riverGraph=plotRiverHistory(app,"Takaka at Kotinga");
@@ -78,11 +78,12 @@ public class WeatherWidget extends AppWidgetProvider {
    return b;
   }catch(Exception e){return null;}
  }
- private static void saveFlow(Context app,String name,String value){
+ private static void saveFlow(Context app,String name,String value,String sourceTime){
   try{
    double flow=Double.parseDouble(value);if(!Double.isFinite(flow)||flow<0)return;
    String key="river_"+name.replaceAll("[^A-Za-z]","");
    android.content.SharedPreferences prefs=app.getSharedPreferences("river_history",Context.MODE_PRIVATE);
+   String fingerprint=sourceTime.trim()+"|"+value.trim();if(fingerprint.equals(prefs.getString(key+"_last_source","")))return;
    JSONArray history=new JSONArray(prefs.getString(key,"[]"));
    long now=System.currentTimeMillis();
    JSONArray trimmed=new JSONArray();
@@ -90,7 +91,7 @@ public class WeatherWidget extends AppWidgetProvider {
    if(trimmed.length()>0&&now-trimmed.getJSONObject(trimmed.length()-1).optLong("time",0)<20L*60*1000)return;
    JSONObject point=new JSONObject();point.put("time",now);point.put("flow",flow);trimmed.put(point);
    while(trimmed.length()>336){JSONArray next=new JSONArray();for(int i=1;i<trimmed.length();i++)next.put(trimmed.get(i));trimmed=next;}
-   prefs.edit().putString(key,trimmed.toString()).apply();
+   prefs.edit().putString(key,trimmed.toString()).putString(key+"_last_source",fingerprint).apply();
   }catch(Exception ignored){}
  }
  private static Bitmap plot(JSONArray arr,JSONArray times,String current)throws Exception{
