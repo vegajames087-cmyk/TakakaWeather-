@@ -159,13 +159,13 @@ public final class RiverData {
         return s.replaceAll("(?is)<script\\b.*?</script>", "").replaceAll("(?is)<style\\b.*?</style>", "")
             .replaceAll("(?i)<br\\s*/?>", " ").replaceAll("<[^>]+>", " ")
             .replace("&nbsp;", " ").replace("&#160;", " ").replace("&amp;", "&")
-            .replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\\"").replace("&#39;", "'");
+            .replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&#39;", "'");
     }
     private static String readAll(InputStream stream) throws Exception {
         StringBuilder out = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
             String line;
-            while ((line = reader.readLine()) != null) out.append(line).append('\\n');
+            while ((line = reader.readLine()) != null) out.append(line).append('\n');
         }
         return out.toString();
     }
