@@ -52,7 +52,7 @@ public class WeatherWidget extends AppWidgetProvider {
      row=row.replaceAll("\\s+"," ").replaceAll("\\|+","|");
      if(!row.toLowerCase(Locale.ROOT).contains(name.toLowerCase(Locale.ROOT)))continue;
      String[] cells=row.split("\\|");java.util.ArrayList<String> values=new java.util.ArrayList<>();for(String cell:cells)if(!cell.trim().isEmpty())values.add(cell.trim());
-     if(values.size()>=5){String flow=values.get(4).trim();if(flow.matches("[0-9]+(?:\\.[0-9]+)?")){if(sb.length()>0)sb.append("\n");sb.append(name).append(": ").append(flow).append(" m³/s · ").append(values.get(1));}}break;
+     if(values.size()>=5){String flow=values.get(4).trim();if(flow.matches("[0-9]+(?:\\.[0-9]+)?")){saveFlow(app,name,flow);if(sb.length()>0)sb.append("\n");sb.append(name).append(": ").append(flow).append(" m³/s · ").append(values.get(1));}}break;
     }
    }
    if(sb.length()>0)river="TDC provisional flows:\n"+sb;
@@ -64,6 +64,21 @@ public class WeatherWidget extends AppWidgetProvider {
   }catch(Exception ignored){}
   AppWidgetManager m=AppWidgetManager.getInstance(app);int[] ids=m.getAppWidgetIds(new ComponentName(app,WeatherWidget.class));
   for(int id:ids){RemoteViews v=new RemoteViews(app.getPackageName(),R.layout.weather_widget);v.setTextViewText(R.id.widget_conditions,town+"\n"+ecmwf+"\n"+yr);v.setTextViewText(R.id.widget_rivers,river);v.setTextViewText(R.id.widget_warning,warning);if(graph!=null)v.setImageViewBitmap(R.id.widget_graph,graph);else v.setImageViewResource(R.id.widget_graph,android.R.color.transparent);m.updateAppWidget(id,v);}
+ }
+ private static void saveFlow(Context app,String name,String value){
+  try{
+   double flow=Double.parseDouble(value);if(!Double.isFinite(flow)||flow<0)return;
+   String key="river_"+name.replaceAll("[^A-Za-z]","");
+   android.content.SharedPreferences prefs=app.getSharedPreferences("river_history",Context.MODE_PRIVATE);
+   JSONArray history=new JSONArray(prefs.getString(key,"[]"));
+   long now=System.currentTimeMillis();
+   JSONArray trimmed=new JSONArray();
+   for(int i=0;i<history.length();i++){JSONObject point=history.optJSONObject(i);if(point!=null&&now-point.optLong("time",0)<7L*24*60*60*1000&&point.optLong("time",0)<=now)trimmed.put(point);}
+   if(trimmed.length()>0&&now-trimmed.getJSONObject(trimmed.length()-1).optLong("time",0)<20L*60*1000)return;
+   JSONObject point=new JSONObject();point.put("time",now);point.put("flow",flow);trimmed.put(point);
+   while(trimmed.length()>336){JSONArray next=new JSONArray();for(int i=1;i<trimmed.length();i++)next.put(trimmed.get(i));trimmed=next;}
+   prefs.edit().putString(key,trimmed.toString()).apply();
+  }catch(Exception ignored){}
  }
  private static Bitmap plot(JSONArray arr,JSONArray times,String current)throws Exception{
   int start=0;String hour=current.length()>=13?current.substring(0,13):current;for(int i=0;i<times.length();i++){if(times.getString(i).startsWith(hour)){start=i;break;}}int count=Math.min(24,arr.length()-start);if(count<2)return null;float[] values=new float[count];float lo=Float.MAX_VALUE,hi=-Float.MAX_VALUE;
