@@ -29,8 +29,19 @@ public class WeatherWidget extends AppWidgetProvider {
   Context app=context.getApplicationContext();new Thread(()->refresh(app)).start();
  }
  private static byte[] fetch(String url)throws Exception{
-  HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection();c.setConnectTimeout(12000);c.setReadTimeout(12000);c.setRequestProperty("User-Agent","WeatherAndRivers/0.3 (github.com/vegajames087-cmyk/TakakaWeather-)");
-  int status=c.getResponseCode();if(status!=200)throw new Exception("HTTP "+status);try(InputStream in=c.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] b=new byte[8192];int n;while((n=in.read(b))!=-1){out.write(b,0,n);if(out.size()>1500000)throw new Exception("Response too large");}return out.toByteArray();}finally{c.disconnect();}
+  HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection();
+  try{
+   c.setConnectTimeout(12000);c.setReadTimeout(12000);
+   c.setRequestProperty("User-Agent","WeatherAndRivers/0.4 (github.com/vegajames087-cmyk/TakakaWeather-)");
+   c.setRequestProperty("Accept","application/json, application/rss+xml, application/xml, text/html, */*");
+   int status=c.getResponseCode();
+   if(status!=HttpURLConnection.HTTP_OK)throw new Exception("HTTP "+status+" from "+new URL(url).getHost());
+   try(InputStream in=c.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream()){
+    byte[] b=new byte[8192];int n;
+    while((n=in.read(b))!=-1){out.write(b,0,n);if(out.size()>1500000)throw new Exception("Response too large");}
+    return out.toByteArray();
+   }
+  }finally{c.disconnect();}
  }
  private static void refresh(Context app){
   int s=app.getSharedPreferences("settings",Context.MODE_PRIVATE).getInt("location",0);if(s<0||s>=MainActivity.NAMES.length)s=0;
