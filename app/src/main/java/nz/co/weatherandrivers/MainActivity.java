@@ -1,14 +1,26 @@
 package nz.co.weatherandrivers;
 import android.app.Activity;
 import android.os.Bundle;
-import android.widget.TextView;
+import android.content.Intent;
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.widget.*;
+import android.view.View;
 public class MainActivity extends Activity {
-    @Override public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        TextView text = new TextView(this);
-        text.setText("Weather & Rivers\n\nFoundation build only. Live forecast, location selection and river gauges are not connected yet.");
-        text.setTextSize(20);
-        text.setPadding(32,48,32,32);
-        setContentView(text);
-    }
+  static final String[] NAMES={"Tākaka","Nelson","Motueka","Collingwood","Blenheim","Westport"};
+  static final double[] LATS={-40.86,-41.27,-41.12,-40.68,-41.51,-41.75};
+  static final double[] LONS={172.81,173.28,173.02,172.68,173.95,171.60};
+  @Override public void onCreate(Bundle state){
+    super.onCreate(state);
+    LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(32,48,32,32);
+    TextView title=new TextView(this);title.setText("Weather & Rivers\nSelect forecast location");title.setTextSize(22);root.addView(title);
+    Spinner spinner=new Spinner(this);ArrayAdapter<String> adapter=new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,NAMES);spinner.setAdapter(adapter);root.addView(spinner);
+    SharedPreferences prefs=getSharedPreferences("settings",MODE_PRIVATE);spinner.setSelection(prefs.getInt("location",0));
+    Button save=new Button(this);save.setText("Save location & refresh widget");root.addView(save);
+    TextView note=new TextView(this);note.setText("Live forecasts: ECMWF and MET Norway. River gauges and official alerts will appear only when verified feeds are available.");root.addView(note);
+    save.setOnClickListener(v->{prefs.edit().putInt("location",spinner.getSelectedItemPosition()).apply();AppWidgetManager manager=AppWidgetManager.getInstance(this);int[] ids=manager.getAppWidgetIds(new ComponentName(this,WeatherWidget.class));sendBroadcast(new Intent(this,WeatherWidget.class).setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE).putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS,ids));Toast.makeText(this,"Location saved",Toast.LENGTH_SHORT).show();});
+    setContentView(root);
+  }
 }
