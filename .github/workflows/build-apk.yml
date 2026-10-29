@@ -44,8 +44,25 @@ jobs:
           test -f app/src/main/java/nz/co/takakaweather/MainActivity.java
           test -f app/src/main/assets/index.html
           test -f app/build.gradle
+          python3 - <<'PY'
+          import re, xml.etree.ElementTree as ET
+          ET.parse("app/src/main/AndroidManifest.xml")
+          html = open("app/src/main/assets/index.html", encoding="utf-8").read()
+          scripts = re.findall(r"<script>(.*?)</script>", html, re.S)
+          assert scripts, "No inline JavaScript found"
+          open("/tmp/weather-dashboard.js", "w", encoding="utf-8").write("\\n".join(scripts))
+          print("Manifest XML and dashboard script extraction passed")
+          PY
+          node --check /tmp/weather-dashboard.js
       - name: Build debug APK
         run: gradle --no-daemon assembleDebug
+      - name: Verify APK package
+        run: |
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          unzip -t app/build/outputs/apk/debug/app-debug.apk
+          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -q 'AndroidManifest.xml'
+          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -q 'classes.dex'
+          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -q 'assets/index.html'
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
