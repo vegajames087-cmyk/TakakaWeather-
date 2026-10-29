@@ -1,6 +1,7 @@
 name: Build Android APK
 on:
-  # Build on demand while the integrated telemetry code is being assembled.
+  push:
+    branches: [ main ]
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,7 +20,7 @@ jobs:
       - name: Locate Android SDK
         shell: bash
         run: |
-          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDK_ROOT="${ANDROID_HOME}:-${ANDROID_SDK_ROOT}"
           echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
           echo "$SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
@@ -35,33 +36,61 @@ jobs:
           test -n "$SDKMANAGER"
           yes | "$SDKMANAGER" --licenses || true
           "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
-      - name: Validate project files
+      - name: Validate source, XML and dashboard JavaScript
+        shell: bash
         run: |
+          set -euo pipefail
           test -f settings.gradle
           test -f build.gradle
           test -f app/src/main/AndroidManifest.xml
           test -f app/src/main/java/nz/co/takakaweather/MainActivity.java
-          test -f app/src/main/assets/index.html
-          test -f app/build.gradle
+          test -f app/src/main/java/nz/co/takakaweather/WeatherData.java
+          test -f app/src/main/java/nz/co/takakaweather/RiverData.java
+          test -f app/src/main/java/nz/co/takakaweather/RiverWidgetProvider.java
+          test -f app/src/main/java/nz/co/takakaweather/RiverRefreshWorker.java
+          test -f app/src/main/res/layout/widget_river.xml
+          test -f app/src/main/res/xml/river_widget_info.xml
+          test -f app/src/test/java/nz/co/takakaweather/RiverDataTest.java
           python3 - <<'PY'
-          import re, xml.etree.ElementTree as ET
-          ET.parse("app/src/main/AndroidManifest.xml")
+          import re
+          import xml.etree.ElementTree as ET
+          for path in [
+              "app/src/main/AndroidManifest.xml",
+              "app/src/main/res/layout/widget_river.xml",
+              "app/src/main/res/xml/river_widget_info.xml",
+              "app/src/main/res/values/strings.xml",
+          ]:
+              ET.parse(path)
           html = open("app/src/main/assets/index.html", encoding="utf-8").read()
           scripts = re.findall(r"<script>(.*?)</script>", html, re.S)
           assert scripts, "No inline JavaScript found"
-          open("/tmp/weather-dashboard.js", "w", encoding="utf-8").write("\\n".join(scripts))
-          print("Manifest XML and dashboard script extraction passed")
+          for feature in [
+              "AndroidData.loadDashboardData",
+              "environmentalgraph/2/244/1/week",
+              "environmentalgraph/2/244/1/month",
+              "environmentalgraph/2/243/1/week",
+              "environmentalgraph/2/243/1/month",
+          ]:
+              assert feature in html, "Missing shipped feature: " + feature
+          open("/tmp/weather-dashboard.js", "w", encoding="utf-8").write("\n".join(scripts))
+          print("XML, native data bridge, all four official graph endpoints and dashboard script checks passed")
           PY
           node --check /tmp/weather-dashboard.js
-      - name: Build debug APK
-        run: gradle --no-daemon assembleDebug
-      - name: Verify APK package
+      - name: Run river parser tests and build debug APK
+        run: gradle --no-daemon testDebugUnitTest assembleDebug
+      - name: Verify APK package and embedded data features
+        shell: bash
         run: |
-          test -s app/build/outputs/apk/debug/app-debug.apk
-          unzip -t app/build/outputs/apk/debug/app-debug.apk
-          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -q 'AndroidManifest.xml'
-          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -q 'classes.dex'
-          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -q 'assets/index.html'
+          set -euo pipefail
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          unzip -t "$APK"
+          unzip -l "$APK" | grep -q 'AndroidManifest.xml'
+          unzip -l "$APK" | grep -q 'classes.dex'
+          unzip -l "$APK" | grep -q 'assets/index.html'
+          unzip -p "$APK" assets/index.html | grep -q 'environmentalgraph/2/244/1/week'
+          unzip -p "$APK" assets/index.html | grep -q 'environmentalgraph/2/243/1/week'
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep -E "^package: name='nz.co.takakaweather' versionCode='3' versionName='1.2'"
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
