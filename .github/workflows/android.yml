@@ -1,6 +1,6 @@
 name: Android build
 concurrency:
-  group: android-build-${{ github.ref }}
+  group: android-build-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: true
 on:
   push:
