@@ -20,19 +20,41 @@ public final class WeatherData {
     public static JSONObject fetchEcmwf(double latitude, double longitude) throws Exception {
         String url = "https://api.open-meteo.com/v1/ecmwf?latitude=" + latitude
             + "&longitude=" + longitude
-            + "&current=temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m,relative_humidity_2m"
-            + "&timezone=Pacific%2FAuckland";
+            + "&hourly=temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m,relative_humidity_2m"
+            + "&timezone=Pacific%2FAuckland&forecast_days=2";
         JSONObject root = getJson(url, "WeatherAndRiversNZ/1.2");
-        JSONObject current = root.optJSONObject("current");
-        if (current == null) throw new Exception("ECMWF response did not include current forecast values");
+        JSONObject hourly = root.optJSONObject("hourly");
+        if (hourly == null) throw new Exception("ECMWF response did not include hourly forecast values");
+        JSONArray times = hourly.optJSONArray("time");
+        if (times == null || times.length() == 0) throw new Exception("ECMWF returned no forecast timestamps");
+
+        SimpleDateFormat localFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.US);
+        localFormat.setTimeZone(TimeZone.getTimeZone("Pacific/Auckland"));
+        long now = System.currentTimeMillis();
+        int selected = -1;
+        for (int i = 0; i < times.length(); i++) {
+            String timestamp = times.optString(i, "");
+            try {
+                Date date = localFormat.parse(timestamp);
+                if (date != null && date.getTime() >= now) { selected = i; break; }
+            } catch (ParseException ignored) {}
+        }
+        if (selected < 0) selected = times.length() - 1;
+
         JSONObject out = new JSONObject();
-        out.put("time", current.optString("time", ""));
-        putNumber(out, "temperature", current.optDouble("temperature_2m", Double.NaN));
-        putNumber(out, "rain", current.optDouble("precipitation", Double.NaN));
-        putNumber(out, "wind", current.optDouble("wind_speed_10m", Double.NaN));
-        putNumber(out, "gust", current.optDouble("wind_gusts_10m", Double.NaN));
-        putNumber(out, "humidity", current.optDouble("relative_humidity_2m", Double.NaN));
+        out.put("time", times.optString(selected, ""));
+        putNumber(out, "temperature", valueAt(hourly, "temperature_2m", selected));
+        putNumber(out, "rain", valueAt(hourly, "precipitation", selected));
+        putNumber(out, "wind", valueAt(hourly, "wind_speed_10m", selected));
+        putNumber(out, "gust", valueAt(hourly, "wind_gusts_10m", selected));
+        putNumber(out, "humidity", valueAt(hourly, "relative_humidity_2m", selected));
         return out;
+    }
+
+    private static double valueAt(JSONObject object, String key, int index) {
+        JSONArray values = object.optJSONArray(key);
+        return values == null || index < 0 || index >= values.length()
+            ? Double.NaN : values.optDouble(index, Double.NaN);
     }
 
     public static JSONObject fetchMetNorway(double latitude, double longitude) throws Exception {
