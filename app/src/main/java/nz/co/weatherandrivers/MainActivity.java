@@ -9,9 +9,9 @@ import android.content.SharedPreferences;
 import android.widget.*;
 import android.view.View;
 public class MainActivity extends Activity {
-  static final String[] NAMES={"Tākaka","Pōhara","Collingwood","Bainham","Pākawau","Puponga","Anatori","Paturau","Karamea"};
-  static final double[] LATS={-40.86,-40.83,-40.68,-40.74,-40.61,-40.51,-40.55,-40.65,-41.25};
-  static final double[] LONS={172.81,172.89,172.68,172.60,172.68,172.71,172.43,172.43,172.11};
+  static final String[] NAMES={"Tākaka","Pōhara","Collingwood","Bainham","Pākawau","Puponga","Anatori","Paturau","Tōtaranui","Awaroa"};
+  static final double[] LATS={-40.86,-40.83,-40.68,-40.74,-40.61,-40.51,-40.55,-40.65,-40.82,-40.87};
+  static final double[] LONS={172.81,172.89,172.68,172.60,172.68,172.71,172.43,172.43,173.00,173.06};
   @Override public void onCreate(Bundle state){
     super.onCreate(state);
     LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(32,48,32,32);
