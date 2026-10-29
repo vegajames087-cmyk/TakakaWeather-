@@ -30,7 +30,7 @@ public class WeatherWidget extends AppWidgetProvider {
  }
  private static byte[] fetch(String url)throws Exception{
   HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection();c.setConnectTimeout(12000);c.setReadTimeout(12000);c.setRequestProperty("User-Agent","WeatherAndRivers/0.3 (github.com/vegajames087-cmyk/TakakaWeather-)");
-  try(InputStream in=c.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream()){if(c.getResponseCode()!=200)throw new Exception("HTTP "+c.getResponseCode());byte[] b=new byte[8192];int n;while((n=in.read(b))!=-1){out.write(b,0,n);if(out.size()>1500000)throw new Exception("Response too large");}return out.toByteArray();}finally{c.disconnect();}
+  int status=c.getResponseCode();if(status!=200)throw new Exception("HTTP "+status);try(InputStream in=c.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] b=new byte[8192];int n;while((n=in.read(b))!=-1){out.write(b,0,n);if(out.size()>1500000)throw new Exception("Response too large");}return out.toByteArray();}finally{c.disconnect();}
  }
  private static void refresh(Context app){
   int s=app.getSharedPreferences("settings",Context.MODE_PRIVATE).getInt("location",0);if(s<0||s>=MainActivity.NAMES.length)s=0;
@@ -44,7 +44,7 @@ public class WeatherWidget extends AppWidgetProvider {
   }catch(Exception ignored){}
   try{String url=String.format(Locale.US,"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=%.4f&lon=%.4f",lat,lon);JSONObject instant=new JSONObject(new String(fetch(url),"UTF-8")).getJSONObject("properties").getJSONArray("timeseries").getJSONObject(0).getJSONObject("data").getJSONObject("instant").getJSONObject("details");yr=String.format(Locale.US,"Yr.no %.1f°C · Wind %.1f m/s",instant.getDouble("air_temperature"),instant.getDouble("wind_speed"));}catch(Exception ignored){}
   try{
-   String html=new String(fetch(RIVERS),"UTF-8");String[] names={"Takaka at Kotinga","Takaka at Harwoods","Anatoki at Happy Sams","Aorere at Devils Boots"};StringBuilder sb=new StringBuilder();
+   String html=new String(fetch(RIVERS),"UTF-8");String[] names={"Takaka at Kotinga","Takaka at Harwoods","Anatoki at Happy Sams","Aorere at Devils Boots","Waingaro at Hanging Rock"};StringBuilder sb=new StringBuilder();
    for(String name:names){
     java.util.regex.Matcher rows=java.util.regex.Pattern.compile("(?is)<tr\\b[^>]*>.*?</tr>").matcher(html);
     while(rows.find()){
