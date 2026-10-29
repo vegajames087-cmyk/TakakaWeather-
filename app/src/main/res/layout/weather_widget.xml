@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical" android:padding="16dp" android:background="#142B36">
-    <TextView android:id="@+id/widget_title" android:layout_width="match_parent"
-        android:layout_height="wrap_content" android:text="WEATHER &amp; RIVERS"
-        android:textColor="#FFFFFF" android:textSize="20sp" android:textStyle="bold"/>
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginTop="10dp" android:text="Foundation build — live data not connected"
-        android:textColor="#E1E8EA" android:textSize="14sp"/>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="16dp" android:background="#142B36">
+<TextView android:id="@+id/widget_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="WEATHER &amp; RIVERS" android:textColor="#FFFFFF" android:textSize="20sp" android:textStyle="bold"/>
+<TextView android:id="@+id/widget_conditions" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Updating ECMWF forecast…" android:textColor="#E1E8EA" android:textSize="14sp"/>
 </LinearLayout>
