@@ -109,7 +109,7 @@ public final class WeatherData {
             StringBuilder body = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
-                while ((line = reader.readLine()) != null) body.append(line).append('\\n');
+                while ((line = reader.readLine()) != null) body.append(line).append('\n');
             }
             String xml = body.toString();
             JSONArray active = new JSONArray();
@@ -145,7 +145,7 @@ public final class WeatherData {
         if (!m.find()) return "";
         return m.group(1).replaceAll("<!\\[CDATA\\[", "").replaceAll("\\]\\]>", "")
             .replaceAll("(?is)<[^>]+>", " ").replace("&amp;", "&").replace("&lt;", "<")
-            .replace("&gt;", ">").replace("&quot;", "\\"").replace("&#39;", "'")
+            .replace("&gt;", ">").replace("&quot;", "\"").replace("&#39;", "'")
             .replaceAll("\\s+", " ").trim();
     }
 
