@@ -46,16 +46,33 @@ public class WeatherWidget extends AppWidgetProvider {
   try{
    String html=new String(fetch(RIVERS),"UTF-8");String[] names={"Takaka at Kotinga","Takaka at Harwoods","Anatoki at Happy Sams","Aorere at Devils Boots","Waingaro at Hanging Rock","Fish Creek at Pupu Springs"};StringBuilder sb=new StringBuilder();
    for(String name:names){
-    java.util.regex.Matcher rows=java.util.regex.Pattern.compile("(?is)<tr\\b[^>]*>.*?</tr>").matcher(html);
+    java.util.regex.Matcher rows=java.util.regex.Pattern.compile("(?is)<tr\\b[^>]*>(.*?)</tr>").matcher(html);
     while(rows.find()){
-     String row=rows.group().replaceAll("(?is)<(script|style)\\b[^>]*>.*?</\\1>","").replaceAll("(?is)<[^>]+>","|").replace("&nbsp;"," ").replace("&#160;"," ");
-     row=row.replaceAll("\\s+"," ").replaceAll("\\|+","|");
-     if(!row.toLowerCase(Locale.ROOT).contains(name.toLowerCase(Locale.ROOT)))continue;
-     String[] cells=row.split("\\|");java.util.ArrayList<String> values=new java.util.ArrayList<>();for(String cell:cells)if(!cell.trim().isEmpty())values.add(cell.trim());
-     if(values.size()>=5){String flow=values.get(4).trim();if(flow.matches("[0-9]+(?:\\.[0-9]+)?")){saveFlow(app,name,flow,values.get(1));if(sb.length()>0)sb.append("\n");sb.append(name).append(": ").append(flow).append(" m³/s · ").append(values.get(1));}}break;
+     String row=rows.group(1);
+     java.util.regex.Matcher cellMatcher=java.util.regex.Pattern.compile("(?is)<t[dh]\\b[^>]*>(.*?)</t[dh]>").matcher(row);
+     java.util.ArrayList<String> values=new java.util.ArrayList<>();
+     while(cellMatcher.find()){
+      String value=android.text.Html.fromHtml(cellMatcher.group(1),android.text.Html.FROM_HTML_MODE_LEGACY).toString().replace('\u00a0',' ').trim().replaceAll("\\s+"," ");
+      values.add(value);
+     }
+     if(values.isEmpty())continue;
+     String site=values.get(0).toLowerCase(Locale.ROOT).replace("ā","a");
+     if(!site.equals(name.toLowerCase(Locale.ROOT)))continue;
+     if(values.size()>=5){
+      String sourceTime=values.get(1);
+      String flow=values.get(4).replace(",","");
+      if(flow.matches("[0-9]+(?:\\.[0-9]+)?")){
+       saveFlow(app,name,flow,sourceTime);
+       if(sb.length()>0)sb.append("\n");
+       sb.append(name).append(": ").append(flow).append(" m³/s · ").append(sourceTime);
+      }
+     }
+     break;
     }
    }
-   if(sb.length()>0)river="TDC provisional flows:\n"+sb;riverGraph=plotRiverHistory(app,"Takaka at Kotinga");
+   if(sb.length()>0)river="TDC provisional flows:\n"+sb;
+   else river="TDC feed reached; no matching river rows parsed";
+   riverGraph=plotRiverHistory(app,"Takaka at Kotinga");
   }catch(Exception ignored){}
   try{
    DocumentBuilderFactory f=DocumentBuilderFactory.newInstance();f.setFeature("http://apache.org/xml/features/disallow-doctype-decl",true);f.setFeature("http://xml.org/sax/features/external-general-entities",false);f.setFeature("http://xml.org/sax/features/external-parameter-entities",false);
