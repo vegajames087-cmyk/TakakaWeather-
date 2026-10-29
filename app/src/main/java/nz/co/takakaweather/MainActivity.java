@@ -2,31 +2,34 @@ package nz.co.takakaweather;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.webkit.JavascriptInterface;
-import android.webkit.WebChromeClient;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.webkit.WebSettings;
-import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.graphics.Color;
 
 import org.json.JSONObject;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MainActivity extends Activity {
     private WebView webView;
-    private final ExecutorService io = Executors.newSingleThreadExecutor();
+    private final ExecutorService io = Executors.newFixedThreadPool(3);
     private final Handler main = new Handler(Looper.getMainLooper());
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        getWindow().setStatusBarColor(Color.rgb(17,21,16));
-        getWindow().setNavigationBarColor(Color.rgb(17,21,16));
+        getWindow().setStatusBarColor(Color.rgb(17, 21, 16));
+        getWindow().setNavigationBarColor(Color.rgb(17, 21, 16));
+
         webView = new WebView(this);
-        webView.setBackgroundColor(Color.rgb(17,21,16));
+        webView.setBackgroundColor(Color.rgb(17, 21, 16));
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -34,30 +37,48 @@ public class MainActivity extends Activity {
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient());
-        webView.addJavascriptInterface(new RiverBridge(), "AndroidRiver");
+        webView.addJavascriptInterface(new DashboardBridge(), "AndroidData");
         setContentView(webView);
         webView.loadUrl("file:///android_asset/index.html");
     }
 
-    private class RiverBridge {
+    private final class DashboardBridge {
         @JavascriptInterface
-        public void loadRiverReport(String callbackName) {
+        public void loadDashboardData(double latitude, double longitude) {
+            final JSONObject result = new JSONObject();
+            final AtomicInteger remaining = new AtomicInteger(3);
+
+            requestPart(result, remaining, "ecmwf", "ecmwfError",
+                () -> WeatherData.fetchEcmwf(latitude, longitude));
+            requestPart(result, remaining, "metNorway", "metNorwayError",
+                () -> WeatherData.fetchMetNorway(latitude, longitude));
+            requestPart(result, remaining, "rivers", "riverError",
+                RiverData::fetchReport);
+        }
+
+        private void requestPart(JSONObject result, AtomicInteger remaining,
+                                  String dataKey, String errorKey,
+                                  Callable<JSONObject> action) {
             io.execute(() -> {
-                String payload;
                 try {
-                    payload = RiverData.fetchReport().toString();
+                    JSONObject payload = action.call();
+                    synchronized (result) { result.put(dataKey, payload); }
                 } catch (Exception e) {
-                    JSONObject error = new JSONObject();
-                    try { error.put("error", e.getMessage() == null ? "River feed unavailable" : e.getMessage()); } catch (Exception ignored) {}
-                    payload = error.toString();
-                }
-                final String result = payload;
-                main.post(() -> {
-                    if (webView != null) {
-                        String callback = "receiveRiverData";
-                        webView.evaluateJavascript("window." + callback + "(" + JSONObject.quote(result) + ")", null);
+                    String message = e.getMessage() == null ? "Data feed unavailable" : e.getMessage();
+                    try { synchronized (result) { result.put(errorKey, message); } }
+                    catch (Exception ignored) {}
+                } finally {
+                    if (remaining.decrementAndGet() == 0) {
+                        final String payload;
+                        synchronized (result) { payload = result.toString(); }
+                        main.post(() -> {
+                            if (webView != null) {
+                                webView.evaluateJavascript(
+                                    "window.receiveDashboardData(" + JSONObject.quote(payload) + ")", null);
+                            }
+                        });
                     }
-                });
+                }
             });
         }
     }
@@ -68,7 +89,11 @@ public class MainActivity extends Activity {
     }
 
     @Override protected void onDestroy() {
-        if (webView != null) { webView.removeJavascriptInterface("AndroidRiver"); webView.destroy(); webView = null; }
+        if (webView != null) {
+            webView.removeJavascriptInterface("AndroidData");
+            webView.destroy();
+            webView = null;
+        }
         io.shutdownNow();
         super.onDestroy();
     }
