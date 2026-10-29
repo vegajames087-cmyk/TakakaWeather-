@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="#151914">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:text="FIELD / RIVER WATCH" android:textColor="#E8A33B" android:textStyle="bold" android:textSize="12sp" />
+        <TextView android:id="@+id/widget_status" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="SYNC" android:textColor="#9FBD72" android:textSize="9sp" />
+    </LinearLayout>
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginTop="7dp" android:layout_marginBottom="7dp" android:background="#414A35"/>
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="TĀKAKA / KOTINGA" android:textColor="#A2AD94" android:textSize="10sp" android:textStyle="bold"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+        <TextView android:id="@+id/widget_k_flow" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="— m³/s" android:textColor="#EDF0E5" android:textSize="23sp" android:textStyle="bold"/>
+        <TextView android:id="@+id/widget_k_level" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="LEVEL —" android:textColor="#A2AD94" android:textSize="10sp"/>
+    </LinearLayout>
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginTop="6dp" android:layout_marginBottom="6dp" android:background="#30392A"/>
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="TĀKAKA / HARWOODS" android:textColor="#A2AD94" android:textSize="10sp" android:textStyle="bold"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+        <TextView android:id="@+id/widget_h_flow" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="— m³/s" android:textColor="#EDF0E5" android:textSize="23sp" android:textStyle="bold"/>
+        <TextView android:id="@+id/widget_h_level" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="LEVEL —" android:textColor="#A2AD94" android:textSize="10sp"/>
+    </LinearLayout>
+    <TextView android:id="@+id/widget_updated" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="COUNCIL TELEMETRY / WAITING" android:textColor="#A2AD94" android:textSize="9sp"/>
+</LinearLayout>
