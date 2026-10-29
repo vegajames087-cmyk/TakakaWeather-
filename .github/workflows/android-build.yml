@@ -21,11 +21,17 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Install Android platform and build tools
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          if [ -z "$SDKMANAGER" ]; then
+            echo "Android sdkmanager was not found on this runner."
+            exit 1
+          fi
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Set up Gradle 8.9
         uses: gradle/gradle-build-action@v3
