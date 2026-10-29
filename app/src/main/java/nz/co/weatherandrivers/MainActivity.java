@@ -9,13 +9,13 @@ import android.content.SharedPreferences;
 import android.widget.*;
 import android.view.View;
 public class MainActivity extends Activity {
-  static final String[] NAMES={"Tākaka","Pōhara","Collingwood","Bainham","Pākawau","Puponga","Karamea","Westport","Ōpunake","New Plymouth"};
-  static final double[] LATS={-40.86,-40.83,-40.68,-40.74,-40.61,-40.51,-41.25,-41.75,-39.46,-39.06};
-  static final double[] LONS={172.81,172.89,172.68,172.60,172.68,172.71,172.11,171.60,173.86,174.08};
+  static final String[] NAMES={"Tākaka","Pōhara","Collingwood","Bainham","Pākawau","Puponga","Anatori","Paturau","Karamea"};
+  static final double[] LATS={-40.86,-40.83,-40.68,-40.74,-40.61,-40.51,-40.55,-40.65,-41.25};
+  static final double[] LONS={172.81,172.89,172.68,172.60,172.68,172.71,172.43,172.43,172.11};
   @Override public void onCreate(Bundle state){
     super.onCreate(state);
     LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(32,48,32,32);
-    TextView title=new TextView(this);title.setText("Weather & Rivers\nGolden Bay & Upper West Coast");title.setTextSize(22);root.addView(title);
+    TextView title=new TextView(this);title.setText("Weather & Rivers\nGolden Bay & Kahurangi coast");title.setTextSize(22);root.addView(title);
     Spinner spinner=new Spinner(this);ArrayAdapter<String> adapter=new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,NAMES);spinner.setAdapter(adapter);root.addView(spinner);
     SharedPreferences prefs=getSharedPreferences("settings",MODE_PRIVATE);spinner.setSelection(prefs.getInt("location",0));
     Button save=new Button(this);save.setText("Save location & refresh widget");root.addView(save);
