@@ -40,7 +40,7 @@ public class WeatherWidget extends AppWidgetProvider {
    String url=String.format(Locale.US,"https://api.open-meteo.com/v1/forecast?latitude=%.4f&longitude=%.4f&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&hourly=temperature_2m&forecast_days=2&timezone=Pacific%%2FAuckland&models=ecmwf_ifs025",lat,lon);
    JSONObject root=new JSONObject(new String(fetch(url),"UTF-8"));JSONObject now=root.getJSONObject("current");
    ecmwf=String.format(Locale.US,"ECMWF %.1f°C · Wind %.0f km/h · Rain %.1f mm · RH %.0f%%",now.getDouble("temperature_2m"),now.getDouble("wind_speed_10m"),now.getDouble("precipitation"),now.getDouble("relative_humidity_2m"));
-   graph=plot(root.getJSONObject("hourly").getJSONArray("temperature_2m"));
+   graph=plot(root.getJSONObject("hourly").getJSONArray("temperature_2m"),root.getJSONObject("hourly").getJSONArray("time"),now.getString("time"));
   }catch(Exception ignored){}
   try{String url=String.format(Locale.US,"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=%.4f&lon=%.4f",lat,lon);JSONObject instant=new JSONObject(new String(fetch(url),"UTF-8")).getJSONObject("properties").getJSONArray("timeseries").getJSONObject(0).getJSONObject("data").getJSONObject("instant").getJSONObject("details");yr=String.format(Locale.US,"Yr.no %.1f°C · Wind %.1f m/s",instant.getDouble("air_temperature"),instant.getDouble("wind_speed"));}catch(Exception ignored){}
   try{
@@ -52,10 +52,10 @@ public class WeatherWidget extends AppWidgetProvider {
      row=row.replaceAll("\\s+"," ").replaceAll("\\|+","|");
      if(!row.toLowerCase(Locale.ROOT).contains(name.toLowerCase(Locale.ROOT)))continue;
      String[] cells=row.split("\\|");java.util.ArrayList<String> values=new java.util.ArrayList<>();for(String cell:cells)if(!cell.trim().isEmpty())values.add(cell.trim());
-     if(values.size()>=5){if(sb.length()>0)sb.append("\\n");sb.append(name).append(": ").append(values.get(4)).append(" m³/s · ").append(values.get(1));}break;
+     if(values.size()>=5){if(sb.length()>0)sb.append("\n");sb.append(name).append(": ").append(values.get(4)).append(" m³/s · ").append(values.get(1));}break;
     }
    }
-   if(sb.length()>0)river="TDC provisional flows:\\n"+sb;
+   if(sb.length()>0)river="TDC provisional flows:\n"+sb;
   }catch(Exception ignored){}
   try{
    DocumentBuilderFactory f=DocumentBuilderFactory.newInstance();f.setFeature("http://apache.org/xml/features/disallow-doctype-decl",true);f.setFeature("http://xml.org/sax/features/external-general-entities",false);f.setFeature("http://xml.org/sax/features/external-parameter-entities",false);
@@ -63,11 +63,11 @@ public class WeatherWidget extends AppWidgetProvider {
    for(int i=0;i<items.getLength();i++){Element item=(Element)items.item(i);NodeList titles=item.getElementsByTagName("title");if(titles.getLength()==0)continue;String title=titles.item(0).getTextContent();String lower=(title+" "+item.getTextContent()).toLowerCase(Locale.ROOT);if(lower.contains("nelson")||lower.contains("tasman")||lower.contains("golden bay")||lower.contains("buller")||lower.contains("northwest")){warning="MetService: "+title;break;}}
   }catch(Exception ignored){}
   AppWidgetManager m=AppWidgetManager.getInstance(app);int[] ids=m.getAppWidgetIds(new ComponentName(app,WeatherWidget.class));
-  for(int id:ids){RemoteViews v=new RemoteViews(app.getPackageName(),R.layout.weather_widget);v.setTextViewText(R.id.widget_conditions,town+"\n"+ecmwf+"\n"+yr);v.setTextViewText(R.id.widget_rivers,river);v.setTextViewText(R.id.widget_warning,warning);if(graph!=null)v.setImageViewBitmap(R.id.widget_graph,graph);m.updateAppWidget(id,v);}
+  for(int id:ids){RemoteViews v=new RemoteViews(app.getPackageName(),R.layout.weather_widget);v.setTextViewText(R.id.widget_conditions,town+"\n"+ecmwf+"\n"+yr);v.setTextViewText(R.id.widget_rivers,river);v.setTextViewText(R.id.widget_warning,warning);if(graph!=null)v.setImageViewBitmap(R.id.widget_graph,graph);else v.setImageViewResource(R.id.widget_graph,android.R.color.transparent);m.updateAppWidget(id,v);}
  }
- private static Bitmap plot(JSONArray arr)throws Exception{
-  int count=Math.min(24,arr.length());if(count<2)return null;float[] values=new float[count];float lo=Float.MAX_VALUE,hi=-Float.MAX_VALUE;
-  for(int i=0;i<count;i++){values[i]=(float)arr.getDouble(i);lo=Math.min(lo,values[i]);hi=Math.max(hi,values[i]);}
+ private static Bitmap plot(JSONArray arr,JSONArray times,String current)throws Exception{
+  int start=0;String hour=current.length()>=13?current.substring(0,13):current;for(int i=0;i<times.length();i++){if(times.getString(i).startsWith(hour)){start=i;break;}}int count=Math.min(24,arr.length()-start);if(count<2)return null;float[] values=new float[count];float lo=Float.MAX_VALUE,hi=-Float.MAX_VALUE;
+  for(int i=0;i<count;i++){values[i]=(float)arr.getDouble(start+i);lo=Math.min(lo,values[i]);hi=Math.max(hi,values[i]);}
   Bitmap bmp=Bitmap.createBitmap(600,110,Bitmap.Config.ARGB_8888);Canvas c=new Canvas(bmp);c.drawColor(Color.rgb(20,43,54));Paint p=new Paint(3);p.setColor(Color.rgb(80,211,201));p.setStrokeWidth(4);p.setStyle(Paint.Style.STROKE);
   for(int i=1;i<count;i++){float x1=10+(i-1)*580f/(count-1),x2=10+i*580f/(count-1);float y1=95-(values[i-1]-lo)*75f/Math.max(1,hi-lo),y2=95-(values[i]-lo)*75f/Math.max(1,hi-lo);c.drawLine(x1,y1,x2,y2,p);}return bmp;
  }
