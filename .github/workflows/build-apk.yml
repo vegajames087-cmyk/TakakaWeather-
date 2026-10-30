@@ -86,6 +86,8 @@ jobs:
               "fetch(API_BASE+'/api/dashboard?lat='",
               "fetch(API_BASE+'/api/tides?lat='",
               "tideReferenceAreas",
+              "id=\"iconForecastPanel\"",
+              "paintWeather('i',j.icon)",
               "ECMWF / OPEN-METEO",
           ]:
               assert feature in html, "Missing shipped feature: " + feature
@@ -112,7 +114,7 @@ jobs:
           sha256sum app/src/main/assets/index.html | cut -d' ' -f1 > /tmp/source-dashboard.sha256
           diff -u /tmp/source-dashboard.sha256 /tmp/apk-dashboard.sha256
           echo "Verified packaged dashboard matches source at commit $GITHUB_SHA"
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep -E "^package: name='nz.co.takakaweather' versionCode='101' versionName='1.4'"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep -E "^package: name='nz.co.takakaweather' versionCode='102' versionName='1.5'"
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
