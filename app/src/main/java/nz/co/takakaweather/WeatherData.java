@@ -53,6 +53,38 @@ public final class WeatherData {
         return out;
     }
 
+    public static JSONObject fetchIcon(double latitude, double longitude) throws Exception {
+        String url = "https://api.open-meteo.com/v1/dwd-icon?latitude=" + latitude
+            + "&longitude=" + longitude
+            + "&hourly=temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m,relative_humidity_2m"
+            + "&timezone=Pacific%2FAuckland&forecast_days=2";
+        JSONObject root = getJson(url, "WeatherAndRiversNZ/1.3");
+        JSONObject hourly = root.optJSONObject("hourly");
+        if (hourly == null) throw new Exception("ICON returned no hourly forecast");
+        JSONArray times = hourly.optJSONArray("time");
+        if (times == null || times.length() == 0) throw new Exception("ICON returned no timestamps");
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.US);
+        format.setTimeZone(TimeZone.getTimeZone("Pacific/Auckland"));
+        int selected = times.length() - 1;
+        for (int i = 0; i < times.length(); i++) {
+            try {
+                Date date = format.parse(times.optString(i, ""));
+                if (date != null && date.getTime() >= System.currentTimeMillis()) {
+                    selected = i;
+                    break;
+                }
+            } catch (ParseException ignored) {}
+        }
+        JSONObject out = new JSONObject();
+        out.put("time", times.optString(selected, ""));
+        putNumber(out, "temperature", valueAt(hourly, "temperature_2m", selected));
+        putNumber(out, "rain", valueAt(hourly, "precipitation", selected));
+        putNumber(out, "wind", valueAt(hourly, "wind_speed_10m", selected));
+        putNumber(out, "gust", valueAt(hourly, "wind_gusts_10m", selected));
+        putNumber(out, "humidity", valueAt(hourly, "relative_humidity_2m", selected));
+        return out;
+    }
+
     private static double valueAt(JSONObject object, String key, int index) {
         JSONArray values = object.optJSONArray(key);
         return values == null || index < 0 || index >= values.length()
