@@ -7,8 +7,8 @@ android {
         applicationId 'nz.co.takakaweather'
         minSdk 23
         targetSdk 35
-        versionCode 101
-        versionName '1.4'
+        versionCode 102
+        versionName '1.5'
     }
 }
 
