@@ -107,6 +107,11 @@ jobs:
           unzip -l "$APK" | grep -q 'assets/index.html'
           unzip -p "$APK" assets/index.html | grep -q 'environmentalgraph/2/244/1/week'
           unzip -p "$APK" assets/index.html | grep -q 'environmentalgraph/2/243/1/week'
+          # Reject APKs packaging an outdated dashboard rather than the checked-out source.
+          unzip -p "$APK" assets/index.html | sha256sum | cut -d' ' -f1 > /tmp/apk-dashboard.sha256
+          sha256sum app/src/main/assets/index.html | cut -d' ' -f1 > /tmp/source-dashboard.sha256
+          diff -u /tmp/source-dashboard.sha256 /tmp/apk-dashboard.sha256
+          echo "Verified packaged dashboard matches source at commit $GITHUB_SHA"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep -E "^package: name='nz.co.takakaweather' versionCode='3' versionName='1.2'"
       - name: Upload APK
         uses: actions/upload-artifact@v4
