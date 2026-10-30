@@ -56,10 +56,12 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void loadDashboardData(double latitude, double longitude) {
             final JSONObject result = new JSONObject();
-            final AtomicInteger remaining = new AtomicInteger(4);
+            final AtomicInteger remaining = new AtomicInteger(5);
 
             requestPart(result, remaining, "ecmwf", "ecmwfError",
                 () -> WeatherData.fetchEcmwf(latitude, longitude));
+            requestPart(result, remaining, "icon", "iconError",
+                () -> WeatherData.fetchIcon(latitude, longitude));
             requestPart(result, remaining, "metNorway", "metNorwayError",
                 () -> WeatherData.fetchMetNorway(latitude, longitude));
             requestPart(result, remaining, "rivers", "riverError",
